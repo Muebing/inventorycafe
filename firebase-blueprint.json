@@ -1,0 +1,75 @@
+{
+  "entities": {
+    "Item": {
+      "title": "Item",
+      "description": "Inventory items",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Item name" },
+        "categoryId": { "type": "string", "description": "Reference to Category" },
+        "unit": { "type": "string", "enum": ["kg", "pcs", "liter"], "description": "Unit of measurement" },
+        "stock": { "type": "number", "description": "Current stock level" },
+        "minStock": { "type": "number", "description": "Minimum stock threshold for notifications" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "categoryId", "unit", "stock", "minStock"]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "Item categories",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Category name" }
+      },
+      "required": ["name"]
+    },
+    "Supplier": {
+      "title": "Supplier",
+      "description": "Item suppliers",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Supplier name" },
+        "address": { "type": "string", "description": "Supplier address" },
+        "contact": { "type": "string", "description": "Supplier contact info" }
+      },
+      "required": ["name", "address", "contact"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Inventory transactions (Stock In, Stock Out, Adjustment)",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["IN", "OUT", "ADJUST"], "description": "Transaction type" },
+        "itemId": { "type": "string", "description": "Reference to Item" },
+        "supplierId": { "type": "string", "description": "Reference to Supplier (optional, for IN)" },
+        "quantity": { "type": "number", "description": "Quantity changed" },
+        "destination": { "type": "string", "description": "Purpose (for OUT)" },
+        "note": { "type": "string", "description": "Adjustment note" },
+        "date": { "type": "string", "format": "date-time" },
+        "adminId": { "type": "string", "description": "Admin who performed the transaction" }
+      },
+      "required": ["type", "itemId", "quantity", "date", "adminId"]
+    },
+    "Log": {
+      "title": "Activity Log",
+      "description": "System activity logs",
+      "type": "object",
+      "properties": {
+        "action": { "type": "string", "description": "Action performed (create, update, delete)" },
+        "entity": { "type": "string", "description": "Entity affected" },
+        "details": { "type": "string", "description": "Action details" },
+        "adminId": { "type": "string", "description": "Admin who performed the action" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["action", "entity", "details", "adminId", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/items/{itemId}": { "schema": "Item", "description": "Collection of inventory items" },
+    "/categories/{categoryId}": { "schema": "Category", "description": "Collection of categories" },
+    "/suppliers/{supplierId}": { "schema": "Supplier", "description": "Collection of suppliers" },
+    "/transactions/{transactionId}": { "schema": "Transaction", "description": "Collection of transactions" },
+    "/logs/{logId}": { "schema": "Log", "description": "Collection of activity logs" }
+  }
+}

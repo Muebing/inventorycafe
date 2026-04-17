@@ -1,0 +1,85 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: items
+    // Fields: name (string), categoryId (string), unit (string), stock (number), minStock (number)
+    //
+    // Collection: categories
+    // Fields: name (string)
+    //
+    // Collection: suppliers
+    // Fields: name (string), address (string), contact (string)
+    //
+    // Collection: transactions
+    // Fields: type (string), itemId (string), supplierId (string?), quantity (number), destination (string?), note (string?), date (timestamp), adminId (string)
+    //
+    // Collection: logs
+    // Fields: action (string), entity (string), details (string), adminId (string), timestamp (timestamp)
+    //
+    // ===============================================================
+
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         request.auth.token.email == "samuelnandobing@gmail.com"); // Default admin
+    }
+
+    function isValidItem(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.categoryId is string &&
+             data.unit in ['kg', 'pcs', 'liter'] &&
+             data.stock is number &&
+             data.minStock is number && data.minStock >= 0;
+    }
+
+    function isValidTransaction(data) {
+      return data.type in ['IN', 'OUT', 'ADJUST'] &&
+             data.itemId is string &&
+             data.quantity is number && data.quantity != 0 &&
+             data.adminId == request.auth.uid;
+    }
+
+    // Rules
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() || request.auth.uid == userId;
+    }
+
+    match /items/{itemId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() && isValidItem(request.resource.data);
+    }
+
+    match /categories/{categoryId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /suppliers/{supplierId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /transactions/{transactionId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() && isValidTransaction(request.resource.data);
+      allow update, delete: if false; // Transactions are immutable
+    }
+
+    match /logs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated();
+      allow update, delete: if false;
+    }
+  }
+}
